@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Style opsional agar tampilan list notifikasi buatan database terlihat rapi */
+        .notif-item {
+            background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #3b82f6; text-align: left;
+            position: relative;
+        }
+        .notif-item.unread { border-left-color: #ef4444; background: #fff7f7; }
+        .notif-time { font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px; }
+
+        .btn-baca {
+            position: absolute; right: 16px; top: 16px;
+            background: #e2e8f0; color: #475569; border: none; padding: 4px 8px;
+            border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+        .btn-baca:hover { background: #cbd5e1; color: #1e293b; }
+    </style>
+</head>
+<body>
+   <div id="notif-wrapper" style="padding: 20px; max-width: 600px; margin: 0 auto;">
+        </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", loadNotifikasi);
+
+        async function loadNotifikasi() {
+            const wrapper = document.getElementById("notif-wrapper");
+            const userId = localStorage.getItem("user_id") || (window.parent && window.parent.localStorage.getItem("user_id"));
+
+            if (!userId) {
+                wrapper.innerHTML = `<p style="text-align:center;">Silakan login terlebih dahulu.</p>`;
+                return;
+            }
+
+            try {
+                // Tarik data notifikasi khusus untuk ID user yang sedang login
+                const response = await fetch(`http://localhost:8080/api/notifikasi/user/${userId}`);
+                
+                // 🛠️ PERBAIKAN 1: Cek apakah server berhasil (status 200) atau error (status 500/404)
+                if (!response.ok) {
+                    throw new Error(`Server bermasalah dengan status: ${response.status}`);
+                }
+
+                const daftarNotif = await response.json();
+
+                // 🛠️ PERBAIKAN 2: Pastikan data beneran berbentuk array/list sebelum di-loop
+                if (!Array.isArray(daftarNotif)) {
+                    throw new Error("Format data yang diterima dari server bukan berupa List/Array!");
+                }
+
+                wrapper.innerHTML = "";
+
+                // Kondisi Cadangan: Jika tidak ada notifikasi sama sekali
+                if (daftarNotif.length === 0) {
+                    wrapper.innerHTML = `
+                        <div class="notif-box" style="text-align: center; margin-top: 50px;">
+                            <span style="font-size: 32px; display:block; margin-bottom: 12px;">📬</span>
+                            <strong>Kotak Masuk Pesan Kosong</strong>
+                            <p style="font-size:14px; margin-top:6px;">Belum ada pemberitahuan antrean reservasi buku untuk Anda saat ini.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Jika ada data, lakukan perulangan cetak kotak pesan
+                daftarNotif.forEach(notif => {
+                    const item = document.createElement("div");
+                    
+                    // Berikan kelas khusus jika status baca bernilai false
+                    item.className = `notif-item ${notif.dibaca ? '' : 'unread'}`;
+
+                    // Format tanggal kirim dari LocalDateTime Java
+                    const dateFormated = new Date(notif.tanggalKirim).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+
+                    const tombolAksi = !notif.dibaca 
+                        ? `<button class="btn-baca" onclick="prosesTandaiDibaca(${notif.id})">Tandai Dibaca</button>` 
+                        : `<span style="position: absolute; right: 16px; top: 16px; font-size: 11px; color: #a1a1aa;">✔ Dibaca</span>`;
+
+                    item.innerHTML = `
+                        ${tombolAksi}
+                        <strong>Pemberitahuan Sistem:</strong>
+                        <p style="font-size: 14px; margin: 6px 0 0 0; color: #334155;">${notif.pesan}</p>
+                        <span class="notif-time">⏰ Dikirim pada: ${dateFormated} WIB</span>
+                    `;
+                    wrapper.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error("Gagal memuat notifikasi:", error);
+                // Menampilkan pesan error yang rapi di halaman web tanpa merusak tampilan layout
+                wrapper.innerHTML = `<p style="text-align:center; color:red; margin-top: 20px;">Gagal memuat kotak masuk pesan akibat gangguan server backend (500).</p>`;
+            }
+        }
+
+        /* FUNGSI MERUBAH STATUS BACA NOTIFIKASI */
+        async function prosesTandaiDibaca(idNotif) {
+            try {
+                const response = await fetch(`http://localhost:8080/api/notifikasi/baca/${idNotif}`, {
+                    method: 'PUT'
+                });
+                
+                if (response.ok) {
+                    // Muat ulang daftar agar perubahan visual langsung terlihat
+                    loadNotifikasi();
+                } else {
+                    console.error("Gagal memperbarui status baca.");
+                }
+            } catch (error) {
+                console.error("Terjadi kendala jaringan:", error);
+            }
+        }
+    </script>
+</body>
+</html>
