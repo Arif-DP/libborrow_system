@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Desain kartu list reservasi agar serasi dengan notifikasi */
+        .reservasi-item {
+            background: white; padding: 16px; border-radius: 8px; margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #64748b; text-align: left;
+            position: relative;
+        }
+        /* Variasi warna border kiri berdasarkan status reservasi */
+        .reservasi-item.pending { border-left-color: #f59e0b; background: #fffbeb; }  /* Kuning/Oranye */
+        .reservasi-item.tersedia { border-left-color: #22c55e; background: #f0fdf4; } /* Hijau */
+        .reservasi-item.selesai { border-left-color: #3b82f6; background: #eff6ff; }  /* Biru */
+        
+        .reservasi-time { font-size: 11px; color: #64748b; display: block; margin-top: 4px; }
+        
+        .status-badge {
+            position: absolute; right: 16px; top: 16px;
+            padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;
+        }
+        .status-badge.pending { background: #fef3c7; color: #d97706; }
+        .status-badge.tersedia { background: #dcfce7; color: #16a34a; }
+        .status-badge.selesai { background: #dbeafe; color: #2563eb; }
+    </style>
+</head>
+<body>
+   <div id="reservasi-wrapper" style="padding: 20px; max-width: 600px; margin: 0 auto;">
+        </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", loadReservasi);
+
+        async function loadReservasi() {
+            const wrapper = document.getElementById("reservasi-wrapper");
+            
+            // Mengambil data user_id dan role dari localStorage (menyesuaikan format notifikasi.html)
+            const userId = localStorage.getItem("user_id") || (window.parent && window.parent.localStorage.getItem("user_id"));
+            const role = localStorage.getItem("role") || (window.parent && window.parent.localStorage.getItem("role"));
+
+            if (!userId) {
+                wrapper.innerHTML = `<p style="text-align:center;">Silakan login terlebih dahulu.</p>`;
+                return;
+            }
+
+            try {
+                // Panggil API backend reservasi yang sudah dilengkapi parameter filter userId dan role
+                const response = await fetch(`http://localhost:8080/api/reservasi?userId=${userId}&role=${role}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Server bermasalah dengan status: ${response.status}`);
+                }
+
+                const daftarReservasi = await response.json();
+
+                if (!Array.isArray(daftarReservasi)) {
+                    throw new Error("Format data dari server salah!");
+                }
+
+                wrapper.innerHTML = "";
+
+                // Kondisi jika data kosong
+                if (daftarReservasi.length === 0) {
+                    wrapper.innerHTML = `
+                        <div style="text-align: center; margin-top: 50px;">
+                            <span style="font-size: 32px; display:block; margin-bottom: 12px;">📖</span>
+                            <strong>Belum Ada Reservasi Buku</strong>
+                            <p style="font-size:14px; margin-top:6px; color:#64748b;">Anda belum melakukan booking atau mengantre buku saat ini.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Lakukan perulangan untuk mencetak kartu antrean reservasi
+                daftarReservasi.forEach(res => {
+                    const item = document.createElement("div");
+                    const statusLower = res.status ? res.status.toLowerCase() : 'pending';
+                    
+                    // Berikan class warna background sesuai status (pending, tersedia, selesai)
+                    item.className = `reservasi-item ${statusLower}`;
+
+                    // Format tanggal kirim/booking
+                    const dateFormated = new Date(res.tanggalReservasi).toLocaleDateString('id-ID', { dateStyle: 'long' });
+
+                    // Pengkondisian nama peminjam (jika admin yang melihat agar tahu ini punya siapa)
+                    const namaPeminjam = res.user ? (res.user.namaLengkap || res.user.username) : "Umum";
+                    const judulBuku = res.buku ? res.buku.judul : "Buku Tidak Diketahui";
+
+                    item.innerHTML = `
+                        <span class="status-badge ${statusLower}">${res.status}</span>
+                        <strong>Informasi Antrean Buku:</strong>
+                        <p style="font-size: 14px; margin: 6px 0 0 0; color: #334155;">
+                            Buku: <strong>${judulBuku}</strong> <br>
+                            Peminjam: <span>${namaPeminjam}</span>
+                        </p>
+                        <span class="reservasi-time">📅 Tanggal Booking: ${dateFormated}</span>
+                    `;
+                    wrapper.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error("Gagal memuat reservasi:", error);
+                wrapper.innerHTML = `<p style="text-align:center; color:red; margin-top: 20px;">Gagal memuat daftar reservasi akibat gangguan server backend.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

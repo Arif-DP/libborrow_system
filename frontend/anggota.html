@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Desain Tambahan untuk Tombol Kontrol & Modal Form Manajemen Anggota */
+        .admin-action-btn { margin-bottom: 15px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-edit { background: #eab308; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-right: 4px; font-weight: bold; }
+        .btn-delete { background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        /* Gaya Tampilan Modal Popup */
+        .modal-crud { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index: 1000; }
+        
+        .modal-body { 
+            background: white; 
+            padding: 24px; 
+            border-radius: 8px; 
+            width: 90%;             /* Agar responsif di layar HP/lewat browser kecil */
+            max-width: 460px;       /* 👈 SISI LEBAR: Ubah angka ini (misal dari 400px ke 460px) untuk melebarkan form */
+            
+            /* 👇 SISI TINGGI & ANTISIPASI OVERFLOW SCREEN */
+            max-height: 85vh;       /* Batasi tinggi modal maksimal 85% dari tinggi layar browser */
+            overflow-y: auto;       /* 👈 Otomatis memunculkan scrollbar vertikal yang rapi jika form melampaui batas layar */
+            
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+        }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display:block; font-size:12px; margin-bottom:4px; font-weight:600; color: #475569;}
+        .form-group input, .form-group select { width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; box-sizing: border-box; }
+        .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+    </style>
+    <script>
+        // Double Protection: Jika diakses langsung secara paksa tanpa role Admin
+        if (localStorage.getItem("user_role") !== "Admin") {
+            window.stop(); 
+            document.innerHTML = "";
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body>
+
+    <button class="admin-action-btn" onclick="bukaModalAnggota()">+ Tambah Anggota Baru</button>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID User</th>
+                    <th>Nama Lengkap</th>
+                    <th>Alamat Email</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Status Akun</th>
+                    <th>No. Anggota</th>
+                    <th style="text-align: center; width: 150px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="anggota-list"></tbody>
+        </table>
+    </div>
+
+    <div id="modalAnggota" class="modal-crud">
+        <div class="modal-body">
+            <h3 id="modalTitle" style="margin-top:0; margin-bottom:16px;">Tambah Anggota</h3>
+            <input type="hidden" id="userIdForm">
+            
+            <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="namaLengkap" required>
+            </div>
+            <div class="form-group">
+                <label>Alamat Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label>Role Otoritas</label>
+                <select id="role">
+                    <option value="Anggota">Anggota</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>No. Anggota (Isi '-' jika Admin)</label>
+                <input type="text" id="noAnggota" placeholder="Contoh: AG003">
+            </div>
+            
+            <div class="form-group" id="passwordFormGroup">
+                <label>Kata Sandi Awal</label>
+                <input type="password" id="password" placeholder="Masukkan password awal">
+            </div>
+            
+            <div class="modal-actions">
+                <button onclick="tutupModalAnggota()" style="padding:6px 12px; background:#64748b; color:white; border:none; border-radius:4px; cursor:pointer;">Batal</button>
+                <button onclick="simpanAnggota()" style="padding:6px 12px; background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer;">Simpan Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", loadAnggota);
+
+        async function loadAnggota() {
+            const tbody = document.getElementById("anggota-list");
+            try {
+                const response = await fetch("http://localhost:8080/api/users");
+                const daftarAnggota = await response.json();
+
+                tbody.innerHTML = "";
+
+                if (daftarAnggota.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data anggota perpustakaan.</td></tr>`;
+                    return;
+                }
+
+                daftarAnggota.forEach(member => {
+                    const row = document.createElement("tr");
+                    
+                    const badgeRole = member.role === "Admin" 
+                        ? `<span class="badge badge-danger">Admin</span>`
+                        : `<span class="badge badge-primary">Anggota</span>`;
+
+                    const nomorAnggota = member.noAnggota ? member.noAnggota : '-';
+                    const namaUser = member.namaLengkap ? member.namaLengkap : '-';
+
+                    const namaEscaped = namaUser.replace(/'/g, "\\'");
+                    const usernameEscaped = member.username ? member.username.replace(/'/g, "\\'") : '';
+
+                    const tombolAksi = `
+                        <button class="btn-edit" onclick="editAnggota(${member.id}, '${namaEscaped}', '${usernameEscaped}', '${member.email}', '${member.role}', '${nomorAnggota}')">Edit</button>
+                        <button class="btn-delete" onclick="hapusAnggota(${member.id})">Hapus</button>
+                    `;
+
+                    row.innerHTML = `
+                        <td>${member.id}</td>
+                        <td><strong>${namaUser}</strong></td>
+                        <td><code>${member.username || '-'}</code></td>
+                        <td>${member.email}</td>
+                        <td>${badgeRole}</td>
+                        <td><span class="badge badge-success">Aktif</span></td>
+                        <td>${nomorAnggota}</td>
+                        <td style="text-align: center;">${tombolAksi}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Gagal memuat data anggota:", error);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal mengambil data dari server.</td></tr>`;
+            }
+        }
+
+        /* ==================== LOGIKA OPERASI CRUD ANGGOTA ==================== */
+
+        function bukaModalAnggota() {
+            document.getElementById("modalTitle").innerText = "Tambah Anggota Baru";
+            document.getElementById("userIdForm").value = "";
+            document.getElementById("namaLengkap").value = "";
+            document.getElementById("username").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("role").value = "Anggota";
+            document.getElementById("noAnggota").value = "";
+            
+            // 👈 PERBAIKAN 2: Tampilkan field password dan buat wajib diisi (required) saat tambah baru
+            document.getElementById("passwordFormGroup").style.display = "block";
+            document.getElementById("password").value = "";
+            document.getElementById("password").required = true;
+
+            document.getElementById("modalAnggota").style.display = "flex";
+        }
+
+        function tutupModalAnggota() {
+            document.getElementById("modalAnggota").style.display = "none";
+        }
+
+        function editAnggota(id, nama, email, role, noAnggota) {
+            document.getElementById("modalTitle").innerText = "Edit Data Anggota";
+            document.getElementById("userIdForm").value = id;
+            document.getElementById("namaLengkap").value = nama;
+            document.getElementById("username").value = username;
+            document.getElementById("email").value = email;
+            document.getElementById("role").value = role;
+            document.getElementById("noAnggota").value = noAnggota === '-' ? '' : noAnggota;
+            
+            // 👈 PERBAIKAN 3: Sembunyikan field password saat edit data anggota lama
+            document.getElementById("passwordFormGroup").style.display = "none";
+            document.getElementById("password").value = "";
+            document.getElementById("password").required = false;
+
+            document.getElementById("modalAnggota").style.display = "flex";
+        }
+
+        async function simpanAnggota() {
+            const id = document.getElementById("userIdForm").value;
+            const passwordValue = document.getElementById("password").value;
+
+            // Validasi client-side: Jika tambah baru, password tidak boleh kosong
+            if (!id && !passwordValue) {
+                alert("Kata sandi awal wajib diisi untuk anggota baru!");
+                return;
+            }
+
+            const payload = {
+                namaLengkap: document.getElementById("namaLengkap").value,
+                username: document.getElementById("username").value,
+                email: document.getElementById("email").value,
+                role: document.getElementById("role").value,
+                noAnggota: document.getElementById("noAnggota").value
+            };
+
+            // 👈 PERBAIKAN 4: Masukkan password ke payload HANYA jika ini pendaftaran baru (POST)
+            if (!id) { 
+                payload.password = passwordValue; 
+            } else { 
+                payload.id = parseInt(id); 
+            }
+
+            const url = id ? `http://localhost:8080/api/users/${id}` : 'http://localhost:8080/api/users/register';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    tutupModalAnggota();
+                    loadAnggota();
+                } else {
+                    alert("Gagal menyimpan data anggota perpustakaan. Periksa log server.");
+                }
+            } catch (err) {
+                console.error("Terjadi kesalahan sistem:", err);
+            }
+        }
+
+        async function hapusAnggota(id) {
+            if (confirm("Apakah Anda yakin ingin menghapus hak akses anggota ini?")) {
+                try {
+                    const response = await fetch(`http://localhost:8080/api/users/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        loadAnggota();
+                    } else {
+                        alert("Gagal menghapus data anggota.");
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
