@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Lib-Borrow - Login</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1e3a8a, var(--dark-slate));
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .login-card h1 { color: var(--dark-slate); font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+        .login-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        .input-group { margin-bottom: 16px; text-align: left; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #f1f5f9; }
+        .input-group input:focus { outline: none; border-color: var(--primary); background: #fff; }
+        .btn-submit { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-submit:hover { background: var(--primary-hover); }
+        .demo-box { margin-top: 20px; background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 12px; text-align: left; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>Sistem Lib-Borrow</h1>
+    
+        <div class="input-group">
+            <label>Alamat Email</label>
+            <input type="email" id="email" placeholder="Masukkan alamat email">
+        </div>
+        <div class="input-group">
+            <label>Kata Sandi</label>
+            <input type="password" id="password" placeholder="Masukkan kata sandi">
+        </div>
+        <button class="btn-submit" onclick="prosesLogin()">Login</button>
+    </div>
+
+    <script>
+    // Pastikan status login sebelumnya bersih saat membuka halaman login
+    localStorage.clear();
+
+    async function prosesLogin() {
+
+        const email = document.getElementById("email").value;
+        const pass = document.getElementById("password").value;
+
+        try {
+            // Panggil API Login ke Spring Boot (sesuaikan URL endpoint di backend-mu)
+            const response = await fetch(`http://localhost:8080/api/users/login?email=${email}&password=${pass}`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                const user = await response.json(); // Mengambil data user berupa JSON dari backend
+
+                console.log("Data user lengkap dari backend:", user);
+
+                // Pastikan properti 'id' sesuai dengan yang dikirim backend (misal: user.id atau user.userId)
+                const idYangDidapat = user.id || user.idUser || user.userId;
+                
+                if (!idYangDidapat) {
+                    alert("Login sukses, tapi properti ID user tidak ditemukan di JSON backend!");
+                    return;
+                }
+                
+                const namaLengkap = user.namaLengkap || "Pengguna";
+
+                // Simpan informasi user ke localStorage agar dibaca oleh dashboard
+                localStorage.setItem("user_id", user.id);
+                localStorage.setItem("user_role", user.role);
+                localStorage.setItem("user_nama", namaLengkap);
+                localStorage.setItem("user_email", user.email);
+                
+                // Arahkan ke dashboard jika sukses
+                window.location.href = "dashboard.html";
+            } else {
+                alert("Email atau kata sandi salah!");
+            }
+        } catch (error) {
+            console.error("Error saat login:", error);
+            alert("Gagal terhubung ke server backend Spring Boot!");
+        }
+    }
+</script>
+</body>
+</html>

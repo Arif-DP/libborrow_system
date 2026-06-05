@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Desain Tambahan untuk Tombol Aksi & Modal Form */
+        .admin-action-btn { display: none; margin-bottom: 15px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-edit { background: #eab308; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px; }
+        .btn-delete { background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .btn-pinjam { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-pinjam:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        
+        /* Modal Style Popup */
+        .modal-crud { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index: 1000; }
+        .modal-body { background: white; padding: 24px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display:block; font-size:12px; margin-bottom:4px; font-weight:600; color: #475569;}
+        .form-group input { width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; box-sizing: border-box; }
+        .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+    </style>
+</head>
+<body>
+    <button id="btnTambahBuku" class="admin-action-btn" onclick="bukaModalBuku()">+ Tambah Buku Baru</button>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 100px;">ID Buku</th>
+                    <th>Judul Buku</th>
+                    <th>Penulis</th>
+                    <th>Kategori</th>
+                    <th style="text-align: center; width: 120px;">Stok</th>
+                    <th style="text-align: center; width: 160px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="buku-list">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="modalBuku" class="modal-crud">
+        <div class="modal-body">
+            <h3 id="modalTitle" style="margin-top:0; margin-bottom:16px;">Tambah Buku</h3>
+            <input type="hidden" id="bukuIdForm">
+            <div class="form-group"><label>Judul Buku</label><input type="text" id="judul"></div>
+            <div class="form-group"><label>Penulis</label><input type="text" id="penulis"></div>
+            <div class="form-group"><label>Kategori</label><input type="text" id="kategori"></div>
+            <div class="form-group"><label>Stok</label><input type="number" id="stok"></div>
+            <div class="modal-actions">
+                <button onclick="tutupModalBuku()" style="padding:6px 12px; background:#64748b; color:white; border:none; border-radius:4px; cursor:pointer;">Batal</button>
+                <button onclick="simpanBuku()" style="padding:6px 12px; background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer;">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        const role = localStorage.getItem("user_role") || (window.parent && window.parent.localStorage.getItem("user_role"));
+        const name = localStorage.getItem("user_name") || (window.parent && window.parent.localStorage.getItem("user_name"));
+        
+        const email = localStorage.getItem("user_email") || localStorage.getItem("email") || 
+                      (window.parent && (window.parent.localStorage.getItem("user_email") || window.parent.localStorage.getItem("email")));
+        
+        const isAdmin = role === "Admin";
+
+        // Jalankan fungsi loadKatalog otomatis saat halaman dimuat
+        document.addEventListener("DOMContentLoaded", () => { 
+
+            if (isAdmin) {
+                document.getElementById("btnTambahBuku").style.display = "block";
+            }
+            loadKatalog();
+        });
+
+        async function loadKatalog() {
+            const tbody = document.getElementById("buku-list");
+            
+            try {
+                // Tarik data dari REST Controller Spring Boot
+                const response = await fetch("http://localhost:8080/api/buku");
+                const daftarBuku = await response.json();
+
+                // Bersihkan baris tabel lama jika ada
+                tbody.innerHTML = "";
+
+                // Jika data kosong []
+                if (daftarBuku.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada koleksi buku saat ini.</td></tr>`;
+                    return;
+                }
+
+                // Lakukan perulangan (looping) untuk memasukkan data dari database ke tabel HTML
+                daftarBuku.forEach(buku => {
+                    const row = document.createElement("tr");
+
+                    // Manipulasi tampilan stok: jika 0 berikan badge Habis, jika ada berikan Eks
+                    const badgeStok = buku.stok === 0 
+                        ? `<span class="badge badge-danger">Habis</span>` 
+                        : `<span class="badge badge-success">${buku.stok} Eks</span>`;
+
+                    // Format penulisan ID Buku agar rapi (misal: BK-01, BK-02)
+                    const formatId = "BK-" + String(buku.id).padStart(2, '0');
+
+                    let tombolAksi = "";
+                    if (isAdmin) {
+                        // Tombol CRUD untuk Admin
+                        tombolAksi = `
+                            <button class="btn-edit" onclick="editBuku(${buku.id}, '${buku.judul}', '${buku.penulis}', '${buku.kategori}', ${buku.stok})">Edit</button>
+                            <button class="btn-delete" onclick="hapusBuku(${buku.id})">Hapus</button>
+                        `;
+                    } else {
+                        // Tombol Peminjaman Buku untuk Anggota biasa
+                        tombolAksi = `
+                            <button class="btn-pinjam" ${buku.stok === 0 ? 'disabled' : ''} onclick="prosesPinjam(${buku.id})">
+                                ${buku.stok > 0 ? 'Pinjam Buku' : 'Habis'}
+                            </button>
+                        `;
+                    }
+
+                    row.innerHTML = `
+                        <td><b>${formatId}</b></td>
+                        <td>${buku.judul}</td>
+                        <td>${buku.penulis}</td>
+                        <td>${buku.kategori}</td>
+                        <td style="text-align: center;">${badgeStok}</td>
+                        <td style="text-align: center;">${tombolAksi}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error("Gagal memuat data buku:", error);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data dari server backend!</td></tr>`;
+            }
+        }
+        /* ==================== FUNGSI LOGIKA CRUD (ADMIN) ==================== */
+        
+        function bukaModalBuku() {
+            document.getElementById("modalTitle").innerText = "Tambah Buku Baru";
+            document.getElementById("bukuIdForm").value = "";
+            document.getElementById("judul").value = "";
+            document.getElementById("penulis").value = "";
+            document.getElementById("kategori").value = "";
+            document.getElementById("stok").value = "";
+            document.getElementById("modalBuku").style.display = "flex";
+        }
+
+        function tutupModalBuku() { 
+            document.getElementById("modalBuku").style.display = "none"; 
+        }
+
+        function editBuku(id, judul, penulis, kategori, stok) {
+            document.getElementById("modalTitle").innerText = "Edit Data Buku";
+            document.getElementById("bukuIdForm").value = id;
+            document.getElementById("judul").value = judul;
+            document.getElementById("penulis").value = penulis;
+            document.getElementById("kategori").value = kategori;
+            document.getElementById("stok").value = stok;
+            document.getElementById("modalBuku").style.display = "flex";
+        }
+
+        async function simpanBuku() {
+            const id = document.getElementById("bukuIdForm").value;
+            const payload = {
+                judul: document.getElementById("judul").value,
+                penulis: document.getElementById("penulis").value,
+                kategori: document.getElementById("kategori").value,
+                stok: parseInt(document.getElementById("stok").value)
+            };
+
+            // Jika mengedit, sertakan variabel kunci bukuId ke dalam JSON request body-nya
+            if(id) { payload.bukuId = parseInt(id); }
+
+            const url = id ? `http://localhost:8080/api/buku/${id}` : 'http://localhost:8080/api/buku';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                if(response.ok) {
+                    tutupModalBuku();
+                    loadKatalog();
+                } else {
+                    alert("Gagal menyimpan data buku!");
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function hapusBuku(id) {
+            if (confirm("Apakah Anda yakin ingin menghapus buku ini dari katalog?")) {
+                try {
+                    const response = await fetch(`http://localhost:8080/api/buku/${id}`, { method: 'DELETE' });
+                    if(response.ok) {
+                        loadKatalog();
+                    } else {
+                        alert("Gagal menghapus data buku.");
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        }
+
+        /* ==================== FUNGSI LOGIKA PINJAM (ANGGOTA) ==================== */
+        
+        async function prosesPinjam(idBuku) {
+
+            console.log("Nilai idBuku yang ditangkap frontend:", idBuku);
+
+            if (!idBuku) {
+                alert("Eror: ID Buku tidak terbaca oleh sistem!");
+                return;
+            }
+
+            // 🔄 AMBIL DATA SIAPA PUN YANG SEDANG LOGIN SECARA DINAMIS
+            const emailLogin = localStorage.getItem("user_email");
+            const namaLogin = localStorage.getItem("user_nama");
+
+            // Validasi: Jika ternyata dompet browser kosong (belum login), cegah meminjam
+            if (!emailLogin || !namaLogin) {
+                alert("Eror: Anda belum login atau data login tidak tersimpan di browser!");
+                return;
+            }
+
+            if (confirm("Apakah Anda bermaksud meminjam buku ini?")) {
+
+                const payload = {
+                    emailAnggota: emailLogin,
+                    namaAnggota: namaLogin,
+                    bukuId: idBuku
+                };
+
+                console.log("Isi data JSON yang akan dikirim:", JSON.stringify(payload));
+
+                try {
+                    const response = await fetch('http://localhost:8080/api/peminjaman/pinjam', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        alert("Peminjaman sukses! Silakan cek perkembangannya pada menu tab Sirkulasi.");
+                        loadKatalog();
+                    } else {
+                        const errorMsg = await response.text();
+                        alert(errorMsg);
+                    }
+                } catch (err) {
+                    console.error("Koneksi gagal:", err);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
