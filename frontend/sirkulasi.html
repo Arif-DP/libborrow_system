@@ -131,7 +131,7 @@
         async function prosesPengembalian(peminjamanId) {
             if (confirm("Apakah Anda yakin ingin memproses pengembalian buku untuk transaksi ini?")) {
                 try {
-                    const response = await fetch(`http://localhost:8080/api/peminjaman/kembali/${peminjamanId}`, {
+                    const response = await fetch(`https://other-paste-covering-satisfy.trycloudflare.com/api/peminjaman/kembali/${peminjamanId}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
