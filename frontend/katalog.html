@@ -183,7 +183,7 @@
             // Jika mengedit, sertakan variabel kunci bukuId ke dalam JSON request body-nya
             if(id) { payload.bukuId = parseInt(id); }
 
-            const url = id ? `http://localhost:8080/api/buku/${id}` : 'http://localhost:8080/api/buku';
+            const url = id ? `https://other-paste-covering-satisfy.trycloudflare.com/api/buku/${id}` : 'https://other-paste-covering-satisfy.trycloudflare.com/api/buku';
             const method = id ? 'PUT' : 'POST';
 
             try {
@@ -207,7 +207,7 @@
         async function hapusBuku(id) {
             if (confirm("Apakah Anda yakin ingin menghapus buku ini dari katalog?")) {
                 try {
-                    const response = await fetch(`http://localhost:8080/api/buku/${id}`, { method: 'DELETE' });
+                    const response = await fetch(`https://other-paste-covering-satisfy.trycloudflare.com/api/buku/${id}`, { method: 'DELETE' });
                     if(response.ok) {
                         loadKatalog();
                     } else {
@@ -251,7 +251,7 @@
                 console.log("Isi data JSON yang akan dikirim:", JSON.stringify(payload));
 
                 try {
-                    const response = await fetch('http://localhost:8080/api/peminjaman/pinjam', {
+                    const response = await fetch('https://other-paste-covering-satisfy.trycloudflare.com/api/peminjaman/pinjam', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -286,7 +286,7 @@
             };
 
             try {
-                const response = await fetch("http://localhost:8080/api/reservasi", {
+                const response = await fetch("https://other-paste-covering-satisfy.trycloudflare.com/api/reservasi", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payloadReservasi)
