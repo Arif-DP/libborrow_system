@@ -44,13 +44,13 @@
             // LOGIKA JALUR URL (Menyesuaikan @GetMapping di Java kamu)
             let url = "https://other-paste-covering-satisfy.trycloudflare.com/api/peminjaman";
 
-                if (role === "Admin") {
-                    // Jika Admin, kirim parameter role
-                    url += "?role=Admin";
-                } else if (userId) {
-                    // Jika Anggota, kirim parameter userId
-                    url += `?userId=${userId}`;
-                }
+            if (role === "Admin") {
+                // Jika Admin, kirim parameter role
+                url += "?role=Admin";
+            } else if (userId) {
+                // Jika Anggota, kirim parameter userId
+                url += `?userId=${userId}`;
+            }
 
             try {
                 const response = await fetch(url);
@@ -93,7 +93,7 @@
                     }
                     const infoDenda = `<b>Rp ${jumlahDenda.toLocaleString('id-ID')}</b>`;
 
-                    // 4. Logika Tombol Aksi Admin dan Anggota
+                    // 4. 🛠️ PERBAIKAN LOGIKA TOMBOL AKSI (Bisa untuk Admin maupun Anggota secara mandiri)
                     let aksiKolom = "";
                     if (statusAman === "dipinjam") {
                         // Baik Admin maupun Anggota, jika statusnya masih "dipinjam", tombol Kembalikan akan muncul
@@ -129,27 +129,24 @@
         async function prosesPengembalian(peminjamanId) {
             if (confirm("Apakah Anda yakin ingin memproses pengembalian buku untuk transaksi ini?")) {
                 try {
-
+                    // 🌟 TAMBAHAN: Ambil id dan role user aktif untuk dikirim sebagai parameter pengaman backend
                     const currentUserId = localStorage.getItem("user_id");
                     const currentUserRole = localStorage.getItem("user_role");
-                    
-                    const response = await fetch(`https://other-paste-covering-satisfy.trycloudflare.com/api/peminjaman/kembali/${peminjamanId}`, {
+
+                    // URL disesuaikan dengan menambahkan query param pengaman (?userId=...&role=...)
+                    const response = await fetch(`https://other-paste-covering-satisfy.trycloudflare.com/api/peminjaman/kembali/${peminjamanId}?userId=${currentUserId}&role=${currentUserRole}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         }
                     });
 
-                    // Kita ambil teks pesannya SEBELUM cek response.ok
-                    // Jadi mau sukses atau gagal, kita punya pesan dari backend
                     const resultMessage = await response.text();
 
                     if (response.ok) {
-                        // Tampilkan pesan dinamis dari backend (contoh: "Buku berhasil dikembalikan. Denda: Rp 4000")
                         alert(resultMessage); 
                         loadSirkulasi(); 
                     } else {
-                        // Jika error, tampilkan pesan error dari backend
                         alert("Gagal memproses pengembalian: " + (resultMessage || "Terjadi kesalahan pada server."));
                     }
                 } catch (error) {
