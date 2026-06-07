@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Lib-Borrow - Registrasi Anggota</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body { background: #f8fafc; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .register-card { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        .brand { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 8px; background: linear-gradient(to right, #3b82f6, #60a5fa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { text-align: center; color: #64748b; font-size: 14px; margin-bottom: 24px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .form-group input:focus { outline: none; border-color: #3b82f6; }
+        .btn-register { background: #0f172a; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        .btn-register:hover { background: #1e293b; }
+        .link-login { text-align: center; margin-top: 20px; font-size: 13px; color: #64748b; }
+        .link-login a { color: #3b82f6; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="register-card">
+        <div class="brand">Lib-Borrow</div>
+        <div class="subtitle">Daftar Akun Anggota Baru Perpustakaan</div>
+
+        <form id="register-form">
+            <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="reg-nama" placeholder="Masukkan nama lengkap Anda" required>
+            </div>
+            <div class="form-group">
+                <label>Alamat Email</label>
+                <input type="email" id="reg-email" placeholder="contoh@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>Kata Sandi (Password)</label>
+                <input type="password" id="reg-password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-register">Daftar Sekarang</button>
+        </form>
+
+        <div class="link-login">
+            Sudah punya akun? <a href="login.html">Login di sini</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("register-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const nama = document.getElementById("reg-nama").value;
+            const email = document.getElementById("reg-email").value;
+            const password = document.getElementById("reg-password").value;
+
+            // Masukkan URL Cloudflare Tunnel kamu yang aktif
+            const baseUrl = "https://other-paste-covering-satisfy.trycloudflare.com";
+
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nama: namaLengkap,
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const message = await response.text();
+
+                if (response.ok) {
+                    alert(message); // Menampilkan pesan sukses + nomor anggota baru
+                    window.location.href = "login.html"; // Alihkan ke halaman login
+                } else {
+                    alert(message); // Menampilkan pesan gagal (misal: email sudah ada)
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Gagal terhubung ke server. Pastikan backend Anda menyala.");
+            }
+        });
+    </script>
+</body>
+</html>
