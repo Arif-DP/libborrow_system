@@ -38,8 +38,7 @@
             
             // Mengambil data user_id dan role dari localStorage (menyesuaikan format notifikasi.html)
             const userId = localStorage.getItem("user_id") || (window.parent && window.parent.localStorage.getItem("user_id"));
-            const role = localStorage.getItem("role") || (window.parent && window.parent.localStorage.getItem("role"));
-
+            const role = localStorage.getItem("user_role") || (window.parent && window.parent.localStorage.getItem("user_role"));
             if (!userId) {
                 wrapper.innerHTML = `<p style="text-align:center;">Silakan login terlebih dahulu.</p>`;
                 return;
