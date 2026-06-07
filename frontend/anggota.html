@@ -109,7 +109,7 @@
         async function loadAnggota() {
             const tbody = document.getElementById("anggota-list");
             try {
-                const response = await fetch("http://localhost:8080/api/users");
+                const response = await fetch("https://other-paste-covering-satisfy.trycloudflare.com/api/users");
                 const daftarAnggota = await response.json();
 
                 tbody.innerHTML = "";
