@@ -66,21 +66,24 @@
             window.location.href = "login.html"; 
         }
 
+        // Tampilkan nama dan role di pojok kanan atas
         document.getElementById("profile-display").innerText = `${name} [${role}]`;
 
+        // 🛠️ PERBAIKAN 1: Mengurutkan teks agar pas dengan tombol Tab
         const statusMap = [
-            "Menampilkan Katalog Buku Tersedia",
-            "Transaksi Peminjaman dan Pengembalian Buku",
-            "Panel Manajemen Otoritas Anggota (Admin Perpustakaan)",
-            "Kotak Masuk Notifikasi",
-            "Kelola Reservasi Buku dan Status Antrian Anda"
+            "Menampilkan Katalog Buku Tersedia",                      // Index 0: Katalog
+            "Transaksi Peminjaman dan Pengembalian Buku",             // Index 1: Peminjaman
+            "Kelola Reservasi Buku dan Status Antrian Anda",          // Index 2: Reservasi
+            "Kotak Masuk Notifikasi",                                 // Index 3: Notifikasi
+            "Panel Manajemen Otoritas Anggota (Admin Perpustakaan)"   // Index 4: Anggota (Admin)
         ];
 
         function gantiTab(index, fileUrl) {
-            // 👉 PROTEKSI AKSES: Validasi role sebelum memuat file ke iframe
-            if (index === 2 && role !== "Admin") {
+            // 🛠️ PERBAIKAN 2: Ubah index proteksi menjadi 4 (Manajemen Anggota)
+            // Tambahkan .toLowerCase() agar aman dari perbedaan huruf besar/kecil
+            if (index === 4 && role.toLowerCase() !== "admin") {
                 document.getElementById("alert-modal").style.display = "flex";
-                return;
+                return; // Hentikan fungsi agar iframe tidak memuat halaman admin
             }
 
             // Ganti tab aktif secara visual
@@ -92,8 +95,14 @@
             document.getElementById("footer-text").innerText = statusMap[index];
         }
 
-        function tutupModal() { document.getElementById("alert-modal").style.display = "none"; }
-        function logout() { localStorage.clear(); window.location.href = "login.html"; }
+        function tutupModal() { 
+            document.getElementById("alert-modal").style.display = "none"; 
+        }
+        
+        function logout() { 
+            localStorage.clear(); 
+            window.location.href = "login.html"; 
+        }
     </script>
 </body>
 </html>
