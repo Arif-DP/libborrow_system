@@ -42,7 +42,7 @@
             const userId = localStorage.getItem("user_id"); 
 
             // LOGIKA JALUR URL (Menyesuaikan @GetMapping di Java kamu)
-            let url = "https://currencies-basic-ian-interventions.trycloudflare.com/api/peminjaman";
+            let url = "https://lots-reviewing-promotions-ballet.trycloudflare.com/api/peminjaman";
 
             if (role === "Admin") {
                 // Jika Admin, kirim parameter role
@@ -134,7 +134,7 @@
                     const currentUserRole = localStorage.getItem("user_role");
 
                     // URL disesuaikan dengan menambahkan query param pengaman (?userId=...&role=...)
-                    const response = await fetch(`https://currencies-basic-ian-interventions.trycloudflare.com/api/peminjaman/kembali/${peminjamanId}?userId=${currentUserId}&role=${currentUserRole}`, {
+                    const response = await fetch(`https://lots-reviewing-promotions-ballet.trycloudflare.com/api/peminjaman/kembali/${peminjamanId}?userId=${currentUserId}&role=${currentUserRole}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
