@@ -58,12 +58,12 @@
     </div>
 
     <script>
-
+        // 🛡️ PERBAIKAN: Tangkap Token JWT dari LocalStorage
+        const token = localStorage.getItem("token") || (window.parent && window.parent.localStorage.getItem("token"));
+        
         const role = localStorage.getItem("user_role") || (window.parent && window.parent.localStorage.getItem("user_role"));
         const name = localStorage.getItem("user_name") || (window.parent && window.parent.localStorage.getItem("user_name"));
-        
         const userId = localStorage.getItem("user_id") || (window.parent && window.parent.localStorage.getItem("user_id"));
-
         const email = localStorage.getItem("user_email") || localStorage.getItem("email") || 
                       (window.parent && (window.parent.localStorage.getItem("user_email") || window.parent.localStorage.getItem("email")));
         
@@ -71,7 +71,6 @@
 
         // Jalankan fungsi loadKatalog otomatis saat halaman dimuat
         document.addEventListener("DOMContentLoaded", () => { 
-
             if (isAdmin) {
                 document.getElementById("btnTambahBuku").style.display = "block";
             }
@@ -82,8 +81,15 @@
             const tbody = document.getElementById("buku-list");
             
             try {
-                // Tarik data dari REST Controller Spring Boot
-                const response = await fetch("https://taxation-wellness-editions-posting.trycloudflare.com/api/buku");
+                // 🛡️ PERBAIKAN: Sisipkan Header Authorization Token
+                const response = await fetch("https://taxation-wellness-editions-posting.trycloudflare.com/api/buku", {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
                 const daftarBuku = await response.json();
 
                 // Bersihkan baris tabel lama jika ada
@@ -91,7 +97,7 @@
 
                 // Jika data kosong []
                 if (daftarBuku.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada koleksi buku saat ini.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada koleksi buku saat ini.</td></tr>`;
                     return;
                 }
 
@@ -142,9 +148,10 @@
 
             } catch (error) {
                 console.error("Gagal memuat data buku:", error);
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data dari server backend!</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data dari server backend! Pastikan Anda sudah Login.</td></tr>`;
             }
         }
+        
         /* ==================== FUNGSI LOGIKA CRUD (ADMIN) ==================== */
         
         function bukaModalBuku() {
@@ -187,9 +194,13 @@
             const method = id ? 'PUT' : 'POST';
 
             try {
+                // 🛡️ PERBAIKAN: Sisipkan Header Authorization Token
                 const response = await fetch(url, {
                     method: method,
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(payload)
                 });
                 
@@ -207,7 +218,14 @@
         async function hapusBuku(id) {
             if (confirm("Apakah Anda yakin ingin menghapus buku ini dari katalog?")) {
                 try {
-                    const response = await fetch(`https://taxation-wellness-editions-posting.trycloudflare.com/api/buku/${id}`, { method: 'DELETE' });
+                    // 🛡️ PERBAIKAN: Sisipkan Header Authorization Token
+                    const response = await fetch(`https://taxation-wellness-editions-posting.trycloudflare.com/api/buku/${id}`, { 
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        }
+                    });
+                    
                     if(response.ok) {
                         loadKatalog();
                     } else {
@@ -222,7 +240,6 @@
         /* ==================== FUNGSI LOGIKA PINJAM (ANGGOTA) ==================== */
         
         async function prosesPinjam(idBuku) {
-
             console.log("Nilai idBuku yang ditangkap frontend:", idBuku);
 
             if (!idBuku) {
@@ -231,8 +248,8 @@
             }
 
             // 🔄 AMBIL DATA SIAPA PUN YANG SEDANG LOGIN SECARA DINAMIS
-            const emailLogin = localStorage.getItem("user_email");
-            const namaLogin = localStorage.getItem("user_nama");
+            const emailLogin = localStorage.getItem("user_email") || (window.parent && window.parent.localStorage.getItem("user_email"));
+            const namaLogin = localStorage.getItem("user_nama") || (window.parent && window.parent.localStorage.getItem("user_nama"));
 
             // Validasi: Jika ternyata dompet browser kosong (belum login), cegah meminjam
             if (!emailLogin || !namaLogin) {
@@ -241,7 +258,6 @@
             }
 
             if (confirm("Apakah Anda bermaksud meminjam buku ini?")) {
-
                 const payload = {
                     emailAnggota: emailLogin,
                     namaAnggota: namaLogin,
@@ -251,9 +267,13 @@
                 console.log("Isi data JSON yang akan dikirim:", JSON.stringify(payload));
 
                 try {
+                    // 🛡️ PERBAIKAN: Sisipkan Header Authorization Token
                     const response = await fetch('https://taxation-wellness-editions-posting.trycloudflare.com/api/peminjaman/pinjam', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json' 
+                        },
                         body: JSON.stringify(payload)
                     });
 
@@ -286,9 +306,13 @@
             };
 
             try {
+                // 🛡️ PERBAIKAN: Sisipkan Header Authorization Token
                 const response = await fetch("https://taxation-wellness-editions-posting.trycloudflare.com/api/reservasi", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        'Authorization': 'Bearer ' + token,
+                        "Content-Type": "application/json" 
+                    },
                     body: JSON.stringify(payloadReservasi)
                 });
 
