@@ -19,9 +19,3 @@ Berikut adalah daftar akun pengguna untuk Sistem Perpustakaan Lib-Borrow yang te
 
 > **Catatan:** Jagalah kerahasiaan data akun ini untuk mencegah penyalahgunaan hak akses sistem.
 """
-
-file_path = "akun_lib_borrow.md"
-with open(file_path, "w", encoding="utf-8") as file:
-    file.write(markdown_content)
-
-print(f"File successfully created: {file_path}")
