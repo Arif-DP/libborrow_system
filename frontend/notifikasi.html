@@ -51,7 +51,11 @@
 
                 wrapper.innerHTML = "";
                 if (daftarNotif.length === 0) {
-                    wrapper.innerHTML = `<div style="text-align: center; margin-top: 50px;">📬 <strong>Kotak Masuk Kosong</strong></div>`;
+                    showEmptyState("notif-wrapper", {
+                        title: "Kotak Masuk Pesan Kosong",
+                        subtitle: "Belum ada Pesan Masuk.",
+                        button: { text: "Lihat Katalog Buku", url: "katalog.html" } // Tambahkan Call to Action!
+                    });
                     return;
                 }
 
