@@ -52,6 +52,7 @@
                         'Authorization': 'Bearer ' + localStorage.getItem("token"),
                         'Content-Type': 'application/json'
                     }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`Server bermasalah dengan status: ${response.status}`);
