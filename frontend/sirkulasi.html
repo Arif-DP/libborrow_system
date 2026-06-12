@@ -59,6 +59,8 @@
                         'Authorization': 'Bearer ' + localStorage.getItem("token"),
                         'Content-Type': 'application/json'
                     }
+                }); // <-- PENUTUP INI YANG HILANG SEBELUMNYA
+
                 const daftarSirkulasi = await response.json();
 
                 console.log("Data sirkulasi dari Java:", daftarSirkulasi);
@@ -98,13 +100,11 @@
                     }
                     const infoDenda = `<b>Rp ${jumlahDenda.toLocaleString('id-ID')}</b>`;
 
-                    // 4. 🛠️ PERBAIKAN LOGIKA TOMBOL AKSI (Bisa untuk Admin maupun Anggota secara mandiri)
+                    // 4. 🛠️ PERBAIKAN LOGIKA TOMBOL AKSI 
                     let aksiKolom = "";
                     if (statusAman === "dipinjam") {
-                        // Baik Admin maupun Anggota, jika statusnya masih "dipinjam", tombol Kembalikan akan muncul
                         aksiKolom = `<button class="btn-kembali" onclick="prosesPengembalian(${idAman})">Kembalikan</button>`;
                     } else {
-                        // Jika sudah dikembalikan, kunci tombol menjadi label Selesai
                         aksiKolom = `<span class="badge-info">Selesai</span>`;
                     }
 
@@ -134,11 +134,9 @@
         async function prosesPengembalian(peminjamanId) {
             if (confirm("Apakah Anda yakin ingin memproses pengembalian buku untuk transaksi ini?")) {
                 try {
-                    // 🌟 TAMBAHAN: Ambil id dan role user aktif untuk dikirim sebagai parameter pengaman backend
                     const currentUserId = localStorage.getItem("user_id");
                     const currentUserRole = localStorage.getItem("user_role");
 
-                    // URL disesuaikan dengan menambahkan query param pengaman (?userId=...&role=...)
                     const response = await fetch(`https://temporarily-adapters-stats-revisions.trycloudflare.com/api/peminjaman/kembali/${peminjamanId}?userId=${currentUserId}&role=${currentUserRole}`, {
                         method: 'POST',
                         headers: {
