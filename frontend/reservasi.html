@@ -46,7 +46,7 @@
 
             try {
                 // Panggil API backend reservasi yang sudah dilengkapi parameter filter userId dan role
-                const response = await fetch(`https://temporarily-adapters-stats-revisions.trycloudflare.com/api/reservasi?userId=${userId}&role=${role}`, {
+                const response = await fetch(`https://tours-chuck-epa-hollywood.trycloudflare.com/api/reservasi?userId=${userId}&role=${role}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem("token"),
